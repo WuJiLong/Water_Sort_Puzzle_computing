@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <algorithm>
 using namespace std;
 //typedef unsigned int uint;
 void clear_screen();
@@ -13,25 +14,25 @@ class bottle{
             SIZE=bot.SIZE;
             contents=new char[SIZE];
             for(int i=SIZE-1;i>=0;i--)
-                contents[i]=' ';
+                contents[i]=bot.contents[i];
         }
         bottle(bottle &&bot){
             SIZE=bot.SIZE;
             contents=new char[SIZE];
             for(int i=SIZE-1;i>=0;i--)
-                contents[i]=' ';
+                contents[i]=bot.contents[i];
         }
-        bottle(){
+        /*bottle(){
             SIZE=0;
             contents=NULL;
-        }
+        }*/
         bottle& operator=(const bottle &bot){
             if(this != &bot) {
                 SIZE=bot.SIZE;
                 delete contents;
                 contents=new char[SIZE];
                 for(int i=SIZE-1;i>=0;i--)
-                    contents[i]=' ';
+                    contents[i]=bot.contents[i];
             }
             return *this;
         }
@@ -50,27 +51,93 @@ class bottle{
                 if(contents[i]!=' ')
                     return contents[i];
             }
-            return 0;
+            return ' ';
         }
-
+        bool is_finish(){
+            char a=contents[0];
+            if(a==' ') return false;
+            for(int i=1;i<SIZE;i++){
+                if(contents[i]!=a){
+                    return false;
+                }
+            }
+            return true;
+        }
+        bool is_full(){
+            return contents[SIZE-1]!=' ';
+        }
+        bool is_empty(){
+            return contents[0]==' ';
+        }
         bool operator<<(bottle &bot){
-            return false;
+            //cout<<bot.contents[0]<<","<<bot.contents[1]<<","<<bot.contents[2]<<","<<bot.contents[3]<<endl;
+            //cout<<this->contents[0]<<","<<contents[1]<<","<<contents[2]<<","<<contents[3]<<endl;
+            
+            if(bot.is_finish()) return false;
+            if(bot.get_top_color()!=this->get_top_color() && (!this->is_empty()) ) return false;
+            if(this->is_full()) return false;
+            if(bot.is_empty()) return false;
+
+            int indexa=0;
+            for(int i=0;i<SIZE;i++){
+                if(contents[i]==' '){
+                    indexa=i;
+                    break;
+                }
+            }
+            int indexb=0;
+            for(int i=0;i<SIZE;i++){
+                if(bot.contents[i]!=' ')
+                    indexb=i;
+            }
+            contents[indexa]=bot.contents[indexb];
+            bot.contents[indexb]=' ';
+
+            (*this)<<bot;
+
+            return true;
+        }
+        void sort(){
+            vector<int> index;
+            for(int i=0;i<SIZE;i++)
+                if(contents[i]!=' ') index.push_back(i);
+            int i=0;
+            for(;i<index.size();i++){
+                contents[i]=contents[index[i]];
+            }
+            for(;i<SIZE;i++){
+                contents[i]=' ';
+            }
+        }
+        int get_w(){
+            int w=0;
+            for(int i=0;i<SIZE;i++){
+                int a=w=i*27;
+                if(contents[i]>='A' && contents[i]<='Z'){
+                    a+=(contents[i]-'A'+1);
+                }
+                w+=a;
+            }
+            return w;
+            
         }
         char *contents;//0:buttom 3:top 
         uint SIZE;
 };
 struct form_to{
-    char form;
-    char to;
+    int form;
+    int to;
     bool operator==(form_to &a){
         form=a.form;
         to=a.to;
         return true;
     }
 };
+bool bt_sort(bottle* a,bottle* b){
+    return a->get_w()<b->get_w();
+}
 class MAP{
     public:
-        int size;
         MAP(uint num,uint size){
             list = new vector<bottle>();
             path = new vector<form_to>();
@@ -82,25 +149,42 @@ class MAP{
                 cout<< (void*)it->contents <<endl;
             }*/
         }
+        void clone(const MAP &bot){
+            for(int i=0;i<bot.list->size();i++){
+                list->push_back(bot.list->at(i));
+            }
+            for(int i=0;i<bot.path->size();i++){
+                path->push_back(bot.path->at(i));
+            }
+        }
         MAP(const MAP &bot){
+            //cout<<"I"<<endl;
+            size=bot.size;
             list = new vector<bottle>();
             path = new vector<form_to>();
-            *(list)=*(bot.list);
-            *(path)=*(bot.path);
+            clone(bot);
+            //*(list)=*(bot.list);
+            //*(path)=*(bot.path);
         }
         MAP(MAP &&bot){
+            //cout<<"II"<<endl;
+            size=bot.size;
             list = new vector<bottle>();
             path = new vector<form_to>();
-            *(list)=*(bot.list);
-            *(path)=*(bot.path);
+            clone(bot);
+            //*(list)=*(bot.list);
+            //*(path)=*(bot.path);
         }
 
         MAP& operator=(const MAP &bot){
+            //cout<<"III"<<endl;
             if(this != &bot) {
+                size=bot.size;
                 list = new vector<bottle>();
                 path = new vector<form_to>();
-                *(list)=*(bot.list);
-                *(path)=*(bot.path);
+                clone(bot);
+                //*(list)=*(bot.list);
+                //*(path)=*(bot.path);
             }
             return *this;
         }
@@ -167,9 +251,65 @@ class MAP{
             (it->contents)[loc]=type;
             return true;
         }
+        bool operator==(const MAP &map){
+            vector<bottle*> a;
+            for(vector<bottle>::iterator it=this->list->begin();it!=this->list->end();it++){
+                a.push_back(&(*it));
+            }
+            vector<bottle*> b;
+            for(vector<bottle>::iterator it=map.list->begin();it!=map.list->end();it++){
+                b.push_back(&(*it));
+            }
+            if(a.size()!=b.size()) return false;
+            sort(a.begin(),a.end(),bt_sort);
+            sort(b.begin(),b.end(),bt_sort);
+            for(int i=0;i<a.size();i++){
+                if(a[i]->get_w()!=b[i]->get_w()) return false;
+            }
+            return true;
+        }
+        vector<MAP>* get_next(){
+            vector<MAP> *other=new vector<MAP>();
+            int s=list->size();
+            for(int i=0;i<s;i++){
+                for(int j=0;j<s;j++){
+                    if(i!=j){
+                        //cout<<"call clone"<<endl;
+                        MAP tmp=(*this);
+                        //cout<<"cmp "<<j<<" to "<<i<<endl;
+                        if(tmp.list->at(i) << tmp.list->at(j)){
+                            //cout<<"add"<<endl;
+                            tmp.path->push_back({j,i});
+                            other->push_back(tmp);
+                        }
+                    }
+                }
+            }
+            //cout<<"return"<<endl;
+            return other;
+        }
+        bool isOK(){
+            for(vector<bottle>::iterator it=this->list->begin();it!=this->list->end();it++){
+                if(!(it->is_empty() || it->is_finish())) return false;
+            }
+            return true;
+        }
+        int get_path_size(){
+            return path->size();
+        }
+        void down(){
+            for(vector<bottle>::iterator it=this->list->begin();it!=this->list->end();it++){
+                it->sort();
+            }
+        }
+        void showpath(){
+            for(int i=0;i<path->size();i++){
+                cout<<"step "<<i+1<<" : "<<path->at(i).form<<" to "<< path->at(i).to<<endl;
 
-        
-    private:
+            }
+        }
+    //private:
+        int size;
         vector<form_to> *path;
         vector<bottle> *list;
 };
@@ -335,12 +475,40 @@ int main(){
     cout<<"開始計算"<<endl;
     
     vector<MAP> pool;
+    map.down();
+
+    /*cout<<"TEST"<<endl;
+    map.list->at(2) << map.list->at(1);
+    cout<<"TEST END"<<endl;*/
+
     pool.push_back(map);
     while(!pool.empty()){
+        MAP X=pool[0];
+        pool.erase(pool.begin());//刪除頭
+        vector<MAP>* other_path = X.get_next();
+        //cout<<"find "<<other_path->size()<<endl;
+        for(vector<MAP>::iterator it=other_path->begin();it!=other_path->end();it++){
+            //cout<<" test"<<endl;
+            if(it->isOK()){
+                clear_screen();
+                it->show_bottle();
+                cout<<"找到路徑！！"<<endl;
+                it->showpath();
+                return 0;
+            }
+            vector<MAP>::iterator f = find(pool.begin(),pool.end(),*it);
+            if(f == pool.end()){
+                pool.push_back(*it);
+            }
+        }
 
-        
+        //整理　刪除死迴圈
+
+        //cout<<" test delete"<<endl;
+        delete other_path;
+        //cout<<" test delete"<<endl;
     }
-    cout<<"FAIL!！ 無法計算解答"<<endl;
+    cout<<"FAIL！ 無法計算解答"<<endl;
     return 0;
 }
 
