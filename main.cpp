@@ -69,14 +69,14 @@ class bottle{
         bool is_empty(){
             return contents[0]==' ';
         }
-        bool operator<<(bottle &bot){
+        int operator<<(bottle &bot){//倒入
             //cout<<bot.contents[0]<<","<<bot.contents[1]<<","<<bot.contents[2]<<","<<bot.contents[3]<<endl;
             //cout<<this->contents[0]<<","<<contents[1]<<","<<contents[2]<<","<<contents[3]<<endl;
             
-            if(bot.is_finish()) return false;
-            if(bot.get_top_color()!=this->get_top_color() && (!this->is_empty()) ) return false;
-            if(this->is_full()) return false;
-            if(bot.is_empty()) return false;
+            if(bot.is_finish()) return 0;
+            if(bot.get_top_color()!=this->get_top_color() && (!this->is_empty()) ) return 0;
+            if(this->is_full()) return 0;
+            if(bot.is_empty()) return 0;
 
             int indexa=0;
             for(int i=0;i<SIZE;i++){
@@ -93,8 +93,31 @@ class bottle{
             contents[indexa]=bot.contents[indexb];
             bot.contents[indexb]=' ';
 
-            (*this)<<bot;
+            int m = (*this)<<bot;
 
+            return m+1;
+        }
+        bool operator>>(bottle &bot){//強制倒入1格
+            //cout<<bot.contents[0]<<","<<bot.contents[1]<<","<<bot.contents[2]<<","<<bot.contents[3]<<endl;
+            //cout<<this->contents[0]<<","<<contents[1]<<","<<contents[2]<<","<<contents[3]<<endl;
+            
+            if(bot.is_full()) return false;
+            if(this->is_empty() ) return false;
+            
+            int indexa=0;
+            for(int i=0;i<SIZE;i++){
+                if(contents[i]!=' ')
+                    indexa=i;
+            }
+            int indexb=0;
+            for(int i=0;i<SIZE;i++){
+                if(bot.contents[i]==' '){
+                    indexb=i;
+                    break;
+                }
+            }
+            bot.contents[indexb]=contents[indexa];
+            contents[indexa]=' ';
             return true;
         }
         void sort(){
@@ -276,38 +299,6 @@ class MAP{
             }*/
             return true;
         }
-        vector<MAP>* get_next(){
-            vector<MAP> *other=new vector<MAP>();
-            int s=list->size();
-            for(int i=0;i<s;i++){
-                for(int j=0;j<s;j++){
-                    if(i!=j){
-                        //cout<<"call clone"<<endl;
-                        MAP tmp=(*this);
-                        //cout<<"cmp "<<j<<" to "<<i<<endl;
-                        if(tmp.list->at(i) << tmp.list->at(j)){
-                            if(tmp.path->size()!=0){
-                                form_to step=tmp.path->at(tmp.path->size()-1);
-                                //cout<<"add"<<endl;
-                                if(step.form != i || step.to!=j){
-                                    if(!(tmp==(*this))){
-                                        tmp.path->push_back({j,i});
-                                        other->push_back(tmp);
-                                    }
-                                }
-                            }else{
-                                if(!(tmp==(*this))){
-                                    tmp.path->push_back({j,i});
-                                    other->push_back(tmp);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            //cout<<"return"<<endl;
-            return other;
-        }
         bool isOK(){
             for(vector<bottle>::iterator it=this->list->begin();it!=this->list->end();it++){
                 if(!(it->is_empty() || it->is_finish())) return false;
@@ -327,32 +318,126 @@ class MAP{
                 cout<<"step "<<i+1<<" : "<<path->at(i).form<<" to "<< path->at(i).to<<endl;
             }
         }
+		bool ckdead(int n){
+			if(path->size() >= n*2){
+				int begin=path->size()-(n*2);
+                if(path->at(begin+0)!=path->at(begin+n)) return false;
+				for(int i=0;i<n;i++){
+					form_to A=path->at(begin+i);
+					form_to B=path->at(begin+i+1);
+					if(A.form != B.to) return false;
+				}
+				return true;
+            }else{
+                return false;
+            }
+		}
         bool is_dead(){
-            bool t6=true;
-            bool t4=true;
-            if(path->size() >= 6){
-                int begin=path->size()-6;
-                if(path->at(begin+0)!=path->at(begin+3)) t6=false;
-                if(path->at(begin+1)!=path->at(begin+4)) t6=false;
-                if(path->at(begin+2)!=path->at(begin+5)) t6=false;
-            }else{
-                t6=false;
-            }
-            if(path->size() >= 4){
-                int begin=path->size()-4;
-                if(path->at(begin+0)!=path->at(begin+2)) t4=false;
-                if(path->at(begin+1)!=path->at(begin+3)) t4=false;
-            }else{
-                t4=false;
-            }
-            if(t4||t6) cout<<"is dead"<<endl;
-            return t4||t6;
+            bool t3=ckdead(3);
+            bool t7=ckdead(7);
+			bool t10=ckdead(10);
+            // if(path->size() >= 6){
+                // /*int begin=path->size()-6;
+                // if(path->at(begin+0)!=path->at(begin+3)) t3=false;
+                // if(path->at(begin+1)!=path->at(begin+4)) t3=false;
+                // if(path->at(begin+2)!=path->at(begin+5)) t3=false;*/
+				// int begin=path->size()-6;
+                // if(path->at(begin+0)!=path->at(begin+3)) t3=false;
+				// for(int i=0;i<3;i++){
+					// form_to A=path->at(begin+i);
+					// form_to B=path->at(begin+i+1);
+					// if(A.form != B.to) t3=false;
+				// }
+            // }else{
+                // t3=false;
+            // }
+           // if(path->size() >= 14){
+                // int begin=path->size()-14;
+                // if(path->at(begin+0)!=path->at(begin+7)) t7=false;
+				// for(int i=0;i<7;i++){
+					// form_to A=path->at(begin+i);
+					// form_to B=path->at(begin+i+1);
+					// if(A.form != B.to) t7=false;
+				// }
+				
+				// /*
+                // if(path->at(begin+1)!=path->at(begin+8)) t7=false;
+                // if(path->at(begin+2)!=path->at(begin+9)) t7=false;
+				// if(path->at(begin+3)!=path->at(begin+10)) t7=false;
+				// if(path->at(begin+4)!=path->at(begin+11)) t7=false;
+				// if(path->at(begin+5)!=path->at(begin+12)) t7=false;
+				// if(path->at(begin+6)!=path->at(begin+13)) t7=false;*/
+				
+            // }else{
+                // t7=false;
+            // }
+            //if(t6) cout<<"is dead"<<endl;
+            return t3||t7 || t10;
         }
     //private:
         int size;
         vector<form_to> *path;
         vector<bottle> *list;
 };
+
+void search_path(MAP &map,vector<form_to> &ans,int a=0){
+	//cout<<a<<endl;
+	int s=map.list->size();
+	for(int i=0;i<s;i++){
+		for(int j=0;j<s;j++){
+			if(i!=j){
+				form_to pt={i,j};//i to j
+				if(map.path->size()!=0){
+					form_to before=map.path->at(map.path->size()-1);
+					if(pt.form==before.to && pt.to == before.form)
+						continue;
+				}
+				int move = (map.list->at(j)<<map.list->at(i));
+				if(move!=0){
+					clear_screen();
+					cout<<a<<endl;
+					map.show_bottle();
+					int x=map.path->size();
+					map.path->push_back(pt);
+					
+					if(x>1000){
+						clear_screen();
+						map.show_bottle();
+						map.showpath();
+						cout<<"deadpath!!"<<endl;
+						pause();
+					}
+					if(map.isOK()){
+						//cout<<"find a path"<<endl;
+						if(ans.size()==0){
+							ans=*(map.path);
+						}else if(ans.size()>map.path->size()){
+							ans=*(map.path);
+							cout<<"update "<<ans.size()<<endl;
+						}
+						clear_screen();
+						map.show_bottle();
+						cout<<"找到路徑！！"<<endl;
+						map.showpath();
+						exit(0);
+					}else if(!map.is_dead()){
+						search_path(map,ans,a+1);
+					}
+					int size=map.path->size() -1;
+					map.path->erase(map.path->begin()+size);
+					int y=map.path->size();
+					//cout<<x<<" "<<y<<" "<<a<<endl;
+					while(move>0){//倒回
+						if(! (map.list->at(pt.to)>>map.list->at(pt.form))) cout<<"error"<<a<<endl;
+						move--;
+					}
+				}
+			}
+		}
+	}
+}
+
+
 int main(){
     unsigned int color,num,size;
     cout<< "輸入瓶子數量:";
@@ -513,64 +598,75 @@ int main(){
         }
     }
     cout<<"開始計算"<<endl;
-    
-    vector<MAP> pool;
+	
     map.down();
+	vector<form_to> ans;
+	search_path(map,ans);
+	map.show_bottle();
+	if(ans.size()!=0){
+		cout<<"找到路徑!!"<<endl;
+		for(int i=0;i<ans.size();i++){
+			cout<<"step "<<i+1<<" : "<<ans.at(i).form<<" to "<< ans.at(i).to<<endl;
+		}
+	}else{
+		cout<<"FAIL！ 無法計算解答"<<endl;
+	}
+    // vector<MAP> pool;
+    // map.down();
 
-    /*cout<<"TEST"<<endl;
-    map.list->at(2) << map.list->at(1);
-    cout<<"TEST END"<<endl;*/
+    // /*cout<<"TEST"<<endl;
+    // map.list->at(2) << map.list->at(1);
+    // cout<<"TEST END"<<endl;*/
 
-    pool.push_back(map);
-    int level=0;
-    while(!pool.empty()){
-        MAP X=pool[0];
-        if(X.path->size()>level){
-            level=X.path->size();
-            cout<<level<<" "<<pool.size() <<endl;
-        }
-        pool.erase(pool.begin());//刪除頭
-        vector<MAP>* other_path = X.get_next();
-        /*if(other_path->size()==0)
-            cout<<"dead path"<<endl;*/
-        for(vector<MAP>::iterator it=other_path->begin();it!=other_path->end();it++){
-            //cout<<" test"<<endl;
-            if(it->isOK()){
-                clear_screen();
-                it->show_bottle();
-                cout<<"找到路徑！！"<<endl;
-                it->showpath();
-                return 0;
-            }
-            //cout<<"find "<<pool.size()<<endl;
-            vector<MAP>::iterator f = find(pool.begin(),pool.end(),*it);
-            //cout<<"find end"<<endl;
-            if(f == pool.end()){
-                //cout<<"append"<<endl;
-                if(! (it->is_dead()))
-                    pool.push_back(*it);
-            }/*else{
-                if(f->path->size() > it->path->size()){
-                    cout<<"swap"<<endl;
-                    vector<form_to> *tmp=f->path;
-                    f->path=it->path;
-                    it->path=tmp;
-                }
-            }*/
-            //cout<<"end "<<pool.size()<<endl;
-        }
+    // pool.push_back(map);
+    // int level=0;
+    // while(!pool.empty()){
+        // MAP X=pool[0];
+        // if(X.path->size()>level){
+            // level=X.path->size();
+            // cout<<level<<" "<<pool.size() <<endl;
+        // }
+        // pool.erase(pool.begin());//刪除頭
+        // vector<MAP>* other_path = X.get_next();
+        // /*if(other_path->size()==0)
+            // cout<<"dead path"<<endl;*/
+        // for(vector<MAP>::iterator it=other_path->begin();it!=other_path->end();it++){
+            // //cout<<" test"<<endl;
+            // if(it->isOK()){
+                // clear_screen();
+                // it->show_bottle();
+                // cout<<"找到路徑！！"<<endl;
+                // it->showpath();
+                // return 0;
+            // }
+            // //cout<<"find "<<pool.size()<<endl;
+            // vector<MAP>::iterator f = find(pool.begin(),pool.end(),*it);
+            // //cout<<"find end"<<endl;
+            // if(f == pool.end()){
+                // //cout<<"append"<<endl;
+                // if(! (it->is_dead()))
+                    // pool.push_back(*it);
+            // }/*else{
+                // if(f->path->size() > it->path->size()){
+                    // cout<<"swap"<<endl;
+                    // vector<form_to> *tmp=f->path;
+                    // f->path=it->path;
+                    // it->path=tmp;
+                // }
+            // }*/
+            // //cout<<"end "<<pool.size()<<endl;
+        // }
 
-        //整理　刪除死迴圈
 
 
 
 
 
         //cout<<" test delete"<<endl;
-        delete other_path;
+        //delete other_path;
         //cout<<" test delete"<<endl;
-    }
-    cout<<"FAIL！ 無法計算解答"<<endl;
+    //}
+    //cout<<"FAIL！ 無法計算解答"<<endl;
     return 0;
 }
 
