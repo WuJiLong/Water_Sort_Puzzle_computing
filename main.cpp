@@ -109,14 +109,16 @@ class bottle{
                 contents[i]=' ';
             }
         }
-        int get_w(){
-            int w=0;
+        unsigned long get_w(){
+            unsigned long w=0;
+            unsigned long p=1;
             for(int i=0;i<SIZE;i++){
-                int a=w=i*27;
+                unsigned long a=0;
                 if(contents[i]>='A' && contents[i]<='Z'){
-                    a+=(contents[i]-'A'+1);
+                    a=(contents[i]-'A'+1);
                 }
-                w+=a;
+                w+=a*p;
+                p=p*27;
             }
             return w;
             
@@ -128,10 +130,12 @@ struct form_to{
     int form;
     int to;
     bool operator==(form_to &a){
-        form=a.form;
-        to=a.to;
-        return true;
+        return form==a.form && to==a.to;
     }
+    bool operator!=(form_to &a){
+        return form!=a.form || to!=a.to;
+    }
+
 };
 bool bt_sort(bottle* a,bottle* b){
     return a->get_w()<b->get_w();
@@ -162,18 +166,18 @@ class MAP{
             size=bot.size;
             list = new vector<bottle>();
             path = new vector<form_to>();
-            clone(bot);
-            //*(list)=*(bot.list);
-            //*(path)=*(bot.path);
+            //clone(bot);
+            *(list)=*(bot.list);
+            *(path)=*(bot.path);
         }
         MAP(MAP &&bot){
             //cout<<"II"<<endl;
             size=bot.size;
             list = new vector<bottle>();
             path = new vector<form_to>();
-            clone(bot);
-            //*(list)=*(bot.list);
-            //*(path)=*(bot.path);
+            //clone(bot);
+            *(list)=*(bot.list);
+            *(path)=*(bot.path);
         }
 
         MAP& operator=(const MAP &bot){
@@ -182,9 +186,9 @@ class MAP{
                 size=bot.size;
                 list = new vector<bottle>();
                 path = new vector<form_to>();
-                clone(bot);
-                //*(list)=*(bot.list);
-                //*(path)=*(bot.path);
+                //clone(bot);
+                *(list)=*(bot.list);
+                *(path)=*(bot.path);
             }
             return *this;
         }
@@ -266,6 +270,10 @@ class MAP{
             for(int i=0;i<a.size();i++){
                 if(a[i]->get_w()!=b[i]->get_w()) return false;
             }
+            /*cout<<"equal"<<endl;
+            for(int i=0;i<a.size();i++){
+                cout<< a[i]->get_w()<<","<<b[i]->get_w()<<endl;
+            }*/
             return true;
         }
         vector<MAP>* get_next(){
@@ -278,9 +286,21 @@ class MAP{
                         MAP tmp=(*this);
                         //cout<<"cmp "<<j<<" to "<<i<<endl;
                         if(tmp.list->at(i) << tmp.list->at(j)){
-                            //cout<<"add"<<endl;
-                            tmp.path->push_back({j,i});
-                            other->push_back(tmp);
+                            if(tmp.path->size()!=0){
+                                form_to step=tmp.path->at(tmp.path->size()-1);
+                                //cout<<"add"<<endl;
+                                if(step.form != i || step.to!=j){
+                                    if(!(tmp==(*this))){
+                                        tmp.path->push_back({j,i});
+                                        other->push_back(tmp);
+                                    }
+                                }
+                            }else{
+                                if(!(tmp==(*this))){
+                                    tmp.path->push_back({j,i});
+                                    other->push_back(tmp);
+                                }
+                            }
                         }
                     }
                 }
@@ -305,8 +325,28 @@ class MAP{
         void showpath(){
             for(int i=0;i<path->size();i++){
                 cout<<"step "<<i+1<<" : "<<path->at(i).form<<" to "<< path->at(i).to<<endl;
-
             }
+        }
+        bool is_dead(){
+            bool t6=true;
+            bool t4=true;
+            if(path->size() >= 6){
+                int begin=path->size()-6;
+                if(path->at(begin+0)!=path->at(begin+3)) t6=false;
+                if(path->at(begin+1)!=path->at(begin+4)) t6=false;
+                if(path->at(begin+2)!=path->at(begin+5)) t6=false;
+            }else{
+                t6=false;
+            }
+            if(path->size() >= 4){
+                int begin=path->size()-4;
+                if(path->at(begin+0)!=path->at(begin+2)) t4=false;
+                if(path->at(begin+1)!=path->at(begin+3)) t4=false;
+            }else{
+                t4=false;
+            }
+            if(t4||t6) cout<<"is dead"<<endl;
+            return t4||t6;
         }
     //private:
         int size;
@@ -482,11 +522,17 @@ int main(){
     cout<<"TEST END"<<endl;*/
 
     pool.push_back(map);
+    int level=0;
     while(!pool.empty()){
         MAP X=pool[0];
+        if(X.path->size()>level){
+            level=X.path->size();
+            cout<<level<<" "<<pool.size() <<endl;
+        }
         pool.erase(pool.begin());//刪除頭
         vector<MAP>* other_path = X.get_next();
-        //cout<<"find "<<other_path->size()<<endl;
+        /*if(other_path->size()==0)
+            cout<<"dead path"<<endl;*/
         for(vector<MAP>::iterator it=other_path->begin();it!=other_path->end();it++){
             //cout<<" test"<<endl;
             if(it->isOK()){
@@ -496,13 +542,29 @@ int main(){
                 it->showpath();
                 return 0;
             }
+            //cout<<"find "<<pool.size()<<endl;
             vector<MAP>::iterator f = find(pool.begin(),pool.end(),*it);
+            //cout<<"find end"<<endl;
             if(f == pool.end()){
-                pool.push_back(*it);
-            }
+                //cout<<"append"<<endl;
+                if(! (it->is_dead()))
+                    pool.push_back(*it);
+            }/*else{
+                if(f->path->size() > it->path->size()){
+                    cout<<"swap"<<endl;
+                    vector<form_to> *tmp=f->path;
+                    f->path=it->path;
+                    it->path=tmp;
+                }
+            }*/
+            //cout<<"end "<<pool.size()<<endl;
         }
 
         //整理　刪除死迴圈
+
+
+
+
 
         //cout<<" test delete"<<endl;
         delete other_path;
