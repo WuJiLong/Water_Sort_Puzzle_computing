@@ -57,3 +57,5 @@
 - setcolor [bottle-id] [loc] [type] -> sc [bottle-id] [loc] [type]  
 - renamecolor [type] [name] -> rn [type] [name]  
 - clear [bottle-id] \<loc\> -> c [bottle-id] \<loc\>    
+## 快速測試指令
+ \<執行檔\> \< testdata
