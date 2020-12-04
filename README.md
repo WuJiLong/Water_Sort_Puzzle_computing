@@ -41,7 +41,7 @@
   |B|  <--- loc = 1  
   |A|  <--- loc = 0  
   |-\|  
-  ex: clean 8  
+  ex: clear 8  
   清空8號瓶子  
   8  
   |&nbsp;|  
