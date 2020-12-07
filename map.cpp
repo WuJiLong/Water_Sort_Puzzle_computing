@@ -149,20 +149,19 @@ void MAP::showpath(){
 bool MAP::ckdead(int n){
 	if(path->size() >= n*2){
 		int begin=path->size()-(n*2);
-		if(path->at(begin+0)!=path->at(begin+n)) return false;
-		for(int i=0;i<n;i++){
-			form_to A=path->at(begin+i);
-			form_to B=path->at(begin+i+1);
-			if(A.form != B.to) return false;
-		}
+		for (int i=0;i<n;i++)
+			if(path->at(begin+i)!=path->at(begin+n+i)) return false;
 		return true;
 	}else{
 		return false;
 	}
 }
 bool MAP::is_dead(){
-	bool t3=ckdead(3);
-	bool t7=ckdead(7);
-	bool t10=ckdead(10);
-	return t3||t7 || t10;
+	for(int i=3;i<=10;i++){
+		if(ckdead(i))return true;
+	}
+	//bool t3=ckdead(3);
+	//bool t7=ckdead(7);
+	//bool t10=ckdead(10);
+	return false;
 }
