@@ -14,9 +14,9 @@ MAP getMAP();
 void search_path(MAP &,vector<form_to> &);
 
 int main(){
-	MAP map=getMAP();
-    cout<<"開始計算"<<endl;
-    map.down();
+        MAP map=getMAP();
+        cout<<"開始計算"<<endl;
+        map.down();
 	vector<form_to> ans;
 	MAP begin=map;
 	search_path(map,ans);
@@ -36,7 +36,7 @@ int main(){
 
 
 MAP getMAP(){
-	unsigned int color,num,size;
+    unsigned int color,num,size;
     cout<< "輸入瓶子數量:";
     cin >> num;
     cout<< "輸入顏色數量:";
